@@ -63,12 +63,13 @@ public class BuildPanel : MonoBehaviour {
 			if (GetPlayerBuild (playerId).IsBuilding ()) {
 				if (input.GetSelect ()) {
 					SelectBlock (playerId);
-					input.SetPlaceCD (Time.time + input.GetPlaceCDBase ());
+					input.SetPlaceCD (Time.time + 2.0f * input.GetPlaceCDBase ());
 				}
 				if (input.GetExit ()) { 
 					InputExit (playerId);
+					input.SetOpenBuildPanelCD (Time.time + input.GetOpenBuildPanelCDBase ());
 				}
-			} else {
+			} else if(!GetPlayerBuild(playerId).IsPlacing()) {
 				if (input.GetOpenBuildPanel ()) {
 					OpenBuildPanel (playerId);
 					input.SetExitCD (Time.time + input.GetExitCDBase ());
