@@ -2,99 +2,71 @@
 using System.Collections;
 
 public class Player : MonoBehaviour {
-	public int joystickId = 1;
+	public int playerId = 1;
 	public float walkStrength = 5.0f;
 	public float jumpStrength = 10.0f;
-
+	public float jumpCDBase = 0.2f;
 	public bool canJump = true;
-
-	private const string JUMP = InputConsts.A;
-	private const string SELECT = InputConsts.A;
-	private const string EXIT = InputConsts.X;
-	private const string X_AXIS = InputConsts.DPAD_X_AXIS;
-	private const string Y_AXIS = InputConsts.DPAD_Y_AXIS;
-
-	private const float Y_DEADZONE = 0.3f;
-	private const float X_DEADZONE = 0.3f;
-
-	private BuildPanel panel;
+	private float jumpCD;
 
 	void Start() {
-		panel = Object.FindObjectOfType<BuildPanel> ();
-	}
-
-	private bool GetInputJump() {
-		return Input.GetButton (JUMP + joystickId);
-	}
-
-	private float GetInputXAxis() {
-		return Input.GetAxis (X_AXIS + joystickId);
-	}
-
-	private float GetInputYAxis() {
-		return Input.GetAxis (Y_AXIS + joystickId);
-	}
-
-	private Vector2 GetInputVector() {
-		return new Vector2 (GetInputXAxis (), GetInputYAxis ());
-	}
-
-	private bool GetInputUp() {
-		return GetInputYAxis () > Y_DEADZONE;
-	}
-
-	private bool GetInputDown() {
-		return GetInputYAxis () < -Y_DEADZONE;
-	}
-
-	private bool GetInputLeft() {
-		return GetInputXAxis () < -X_DEADZONE;
-	}
-
-	private bool GetInputRight() {
-		return GetInputXAxis () > X_DEADZONE;
-	}
-
-	private bool GetInputSelect() {
-		return Input.GetButton (SELECT + this.joystickId);
-	}
-
-	private bool GetInputExit() {
-		return Input.GetButton (EXIT + this.joystickId);
+		Object.FindObjectOfType<BuildPanel> ().AddPlayer(playerId);
+		Object.FindObjectOfType<PlayerInputs> ().AddPlayer (playerId);
+		Object.FindObjectOfType<CameraController> ().AddPlayer (gameObject);
 	}
 
 	void Update () {
-		GetComponent<Rigidbody2D> ().AddForce (Vector2.right * GetInputXAxis () * walkStrength);
-		if (GetInputYAxis () > Y_DEADZONE || GetInputJump ()) {
-			this.TryJump ();
+		PlayerBuild build = Object.FindObjectOfType<BuildPanel> ().GetPlayerBuild (playerId);
+		if (!build.IsBuilding () && !build.IsPlacing()) {
+			PlayerInput input = Object.FindObjectOfType<PlayerInputs> ().GetPlayerInput (playerId);
+			Option<float> xAxis = input.GetXAxis ();
+			if (xAxis.IsSome ()) {
+				this.GetComponent<Rigidbody2D> ().AddForce (Vector2.right * xAxis.GetValue() * walkStrength);
+			}
+			if (input.GetJump ()) {
+				this.TryJump ();
+			}
 		}
-		if (GetInputUp ()) {
-			panel.InputUp (joystickId);
+	}
+
+	void OnCollisionEnter2D(Collision2D coll) {
+		if (canJump) {
+			return;
 		}
-		if (GetInputDown ()) {
-			panel.InputDown (joystickId);
+		if (coll.gameObject.tag == Tags.BLOCK) {
+			foreach (ContactPoint2D point in coll.contacts) {
+				//Debug.Log ("Point: " + point.point);
+				//Debug.Log ("Pos: " + transform.position.y);
+				//Debug.Log ("Ext Y: " + coll.collider.bounds.extents.y * transform.lossyScale.y);
+				//Debug.Log ("Point - (Pos + Ext Y): " + (point.point.y - (transform.position.y + coll.collider.bounds.extents.y * transform.lossyScale.y)));
+				if ((point.point.y - (transform.position.y + coll.collider.bounds.extents.y * transform.lossyScale.y)) < 0.0f) {
+					SetCanJump (true);
+					break;
+				}
+			}
 		}
-		if (GetInputLeft ()) {
-			panel.InputLeft (joystickId);
+	}
+
+	void SetCanJump(bool jump) {
+		if (Time.time > jumpCD) {
+			canJump = jump;
 		}
-		if (GetInputRight ()) {
-			panel.InputRight (joystickId);
-		}
-		if (GetInputSelect ()) {
-			panel.InputSelect (joystickId);
-		}
-		if (GetInputExit ()) { 
-			panel.InputExit (joystickId);
+	}
+
+	void OnCollisionStay2D(Collision2D coll) {
+		if (!canJump) {
+			OnCollisionEnter2D (coll);
 		}
 	}
 
 	void TryJump() {
-		if (canJump) {
+		if (canJump && Time.time > jumpCD) {
 			Jump ();
 		}
 	}
 
 	void Jump() {
+		jumpCD = Time.time + jumpCDBase;
 		canJump = false;
 		GetComponent<Rigidbody2D> ().AddForce (Vector2.up * jumpStrength, ForceMode2D.Impulse);
 	}

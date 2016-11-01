@@ -4,11 +4,11 @@ using System.Collections.Generic;
 public class BuildPanel : MonoBehaviour {
 	public GameObject canvas;
 
-	private Dictionary<int, Players> players;
+	private Dictionary<int, PlayerBuild> players;
 	private List<UIObject> uiObjects;
 
 	void Start () {
-		players = new Dictionary<int, Players> ();
+		players = new Dictionary<int, PlayerBuild> ();
 		uiObjects = new List<UIObject> ();
 		canvas.SetActive (false);
 		foreach (BuildItem item in canvas.GetComponentsInChildren<BuildItem> ()) {
@@ -43,17 +43,55 @@ public class BuildPanel : MonoBehaviour {
 		}
 	}
 
-	private Players GetPlayers(int playerId) {
+	void Update() {
+		PlayerInputs inputs = Object.FindObjectOfType<PlayerInputs> ();
+		foreach (PlayerBuild player in players.Values) {
+			int playerId = player.GetPlayerId ();
+			PlayerInput input = inputs.GetPlayerInput (playerId);
+			if (input.GetUp()) {
+				MoveUp(playerId);
+			}
+			if (input.GetDown ()) {
+				MoveDown (playerId);
+			}
+			if (input.GetLeft ()) {
+				MoveLeft (playerId);
+			}
+			if (input.GetRight ()) {
+				MoveRight (playerId);
+			}
+			if (GetPlayerBuild (playerId).IsBuilding ()) {
+				if (input.GetSelect ()) {
+					SelectBlock (playerId);
+					input.SetPlaceCD (Time.time + input.GetPlaceCDBase ());
+				}
+				if (input.GetExit ()) { 
+					InputExit (playerId);
+				}
+			} else {
+				if (input.GetOpenBuildPanel ()) {
+					OpenBuildPanel (playerId);
+					input.SetExitCD (Time.time + input.GetExitCDBase ());
+				}
+			}
+		}
+	}
+
+	public void AddPlayer(int playerId) {
+		GetPlayerBuild (playerId);
+	}
+
+	public PlayerBuild GetPlayerBuild(int playerId) {
 		if (!players.ContainsKey (playerId)) {
-			players.Add (playerId, new Players (playerId));
+			players.Add (playerId, new PlayerBuild (playerId));
 		}
 
 		return players[playerId];
 	}
 
 	private void ExitPanel() {
-		foreach (Players player in players.Values) {
-			if (player.IsPlayerBuilding()) {
+		foreach (PlayerBuild player in players.Values) {
+			if (player.IsBuilding()) {
 				return;
 			}
 		}
@@ -62,8 +100,8 @@ public class BuildPanel : MonoBehaviour {
 		
 	private void OpenBuildPanel(int playerId) {
 		canvas.SetActive (true);
-		Players player = GetPlayers (playerId);
-		player.SetPlayerBuilding (true);
+		PlayerBuild player = GetPlayerBuild (playerId);
+		player.SetBuilding (true);
 		if (player.GetSelected () == null) {
 			if (uiObjects.Count > 0) {
 				player.SetSelected (uiObjects [0]);
@@ -73,18 +111,14 @@ public class BuildPanel : MonoBehaviour {
 		}
 	}
 
-	public void InputLeft(int playerId) {
-		Players player = GetPlayers (playerId);
-		if (!player.CanDoInput ()) {
-			return;
-		}
-		player.DoInput ();
-		Debug.Log ("Input Left");
+	private void MoveLeft(int playerId) {
+		PlayerBuild player = GetPlayerBuild (playerId);
+		//Debug.Log ("Input Left");
 		UIObject temp;
-		Debug.Log ("Selected: " + player.GetSelected ());
+		//Debug.Log ("Selected: " + player.GetSelected ());
 		temp = player.GetSelected ();
 		if (temp != null) {
-			Debug.Log ("Left: " + temp.GetLeft());
+			//Debug.Log ("Left: " + temp.GetLeft());
 			temp = temp.GetLeft ();
 			if (temp != null) {
 				player.SetSelected (temp);
@@ -92,18 +126,14 @@ public class BuildPanel : MonoBehaviour {
 		}
 	}
 
-	public void InputRight(int playerId) {
-		Players player = GetPlayers (playerId);
-		if (!player.CanDoInput ()) {
-			return;
-		}
-		player.DoInput ();
-		Debug.Log ("Input Right");
+	private void MoveRight(int playerId) {
+		PlayerBuild player = GetPlayerBuild (playerId);
+		//Debug.Log ("Input Right");
 		UIObject temp;
-		Debug.Log ("Selected: " + player.GetSelected ());
+		//Debug.Log ("Selected: " + player.GetSelected ());
 		temp = player.GetSelected ();
 		if (temp != null) {
-			Debug.Log ("Right: " + temp.GetRight());
+			//Debug.Log ("Right: " + temp.GetRight());
 			temp = temp.GetRight ();
 			if (temp != null) {
 				player.SetSelected (temp);
@@ -111,18 +141,14 @@ public class BuildPanel : MonoBehaviour {
 		}
 	}
 
-	public void InputUp(int playerId) {
-		Players player = GetPlayers (playerId);
-		if (!player.CanDoInput ()) {
-			return;
-		}
-		player.DoInput ();
-		Debug.Log ("Input Up");
+	private void MoveUp(int playerId) {
+		PlayerBuild player = GetPlayerBuild (playerId);
+		//Debug.Log ("Input Up");
 		UIObject temp;
-		Debug.Log ("Selected: " + player.GetSelected ());
+		//Debug.Log ("Selected: " + player.GetSelected ());
 		temp = player.GetSelected ();
 		if (temp != null) {
-			Debug.Log ("Up: " + temp.GetUp());
+			//Debug.Log ("Up: " + temp.GetUp());
 			temp = temp.GetUp ();
 			if (temp != null) {
 				player.SetSelected (temp);
@@ -130,18 +156,14 @@ public class BuildPanel : MonoBehaviour {
 		}
 	}
 
-	public void InputDown(int playerId) {
-		Players player = GetPlayers (playerId);
-		if (!player.CanDoInput ()) {
-			return;
-		}
-		player.DoInput ();
-		Debug.Log ("Input Down");
+	private void MoveDown(int playerId) {
+		PlayerBuild player = GetPlayerBuild (playerId);
+		//Debug.Log ("Input Down");
 		UIObject temp;
-		Debug.Log ("Selected: " + player.GetSelected ());
+		//Debug.Log ("Selected: " + player.GetSelected ());
 		temp = player.GetSelected ();
 		if (temp != null) {
-			Debug.Log ("Down: " + temp.GetDown());
+			//Debug.Log ("Down: " + temp.GetDown());
 			temp = temp.GetDown ();
 			if (temp != null) {
 				player.SetSelected (temp);
@@ -149,67 +171,49 @@ public class BuildPanel : MonoBehaviour {
 		}
 	}
 
-	public void InputSelect(int playerId) {
-		Players player = GetPlayers (playerId);
-		if (!player.CanDoInput ()) {
-			return;
-		}
-		player.DoInput ();
-		if (!player.IsPlayerBuilding ()) {
-			OpenBuildPanel (playerId);
-		} else {
-			if (player.GetSelected () != null) {
-				GameObject buildingBlock = Instantiate<GameObject> (player.GetSelected().GetBlock());
-				buildingBlock.transform.position = Vector3.zero;
-				buildingBlock.GetComponent<SpriteRenderer> ().color = player.GetSelectedColor (true);
-				buildingBlock.AddComponent<BuildingBlock> ();
-				player.SetPlayerBuilding (false);
-				player.SetSelected (null);
-				ExitPanel ();
-			}
+	private void SelectBlock(int playerId) {
+		PlayerBuild player = GetPlayerBuild (playerId);
+		if (player.GetSelected () != null) {
+			player.SetPlacing (true);
+			GameObject buildingBlock = Instantiate<GameObject> (player.GetSelected().GetBlock());
+			buildingBlock.transform.position = Vector3.zero;
+			buildingBlock.GetComponent<SpriteRenderer> ().color = player.GetSelectedColor (true);
+			buildingBlock.AddComponent<BuildingBlock> ();
+			buildingBlock.GetComponent<BuildingBlock> ().SetPlayer (playerId);
+			InputExit (playerId);
 		}
 	}
 
-	public void InputExit(int playerId) {
-		Players player = GetPlayers (playerId);
-		if (!player.CanDoInput ()) {
-			return;
-		}
-		player.DoInput ();
+	private void InputExit(int playerId) {
+		PlayerBuild player = GetPlayerBuild (playerId);
 		player.SetSelected (null);
-		player.SetPlayerBuilding (false);
+		player.SetBuilding (false);
 		ExitPanel ();
 	}
 }
 
-class Players {
-	private const float INPUT_DELAY = 0.1f;
-
+public class PlayerBuild {
 	private int playerId;
-	private bool playerBuilding;
+	private bool building;
+	private bool placing;
 	private UIObject selected;
-	private float timeToAllowInput;
 
-	public Players(int playerId) {
+	public PlayerBuild(int playerId) {
 		this.playerId = playerId;
-		this.playerBuilding = false;
-		this.timeToAllowInput = 0.0f;
+		this.building = false;
+		this.placing = false;
 	}
 
-	public void DoInput() {
-		timeToAllowInput = Time.time + INPUT_DELAY;
+	internal void SetBuilding(bool building) {
+		this.building = building;
 	}
 
-	public bool CanDoInput() {
-		return Time.time > timeToAllowInput;
+	public void SetPlacing(bool placing) {
+		this.placing = placing;
 	}
 
-	public void SetPlayerBuilding(bool building) {
-		this.playerBuilding = building;
-	}
-
-	public void SetSelected(UIObject uiObject) {
-		Debug.Log ("Current Selected: " + this.selected + ", Next Selected: " + uiObject);
+	internal void SetSelected(UIObject uiObject) {
+		//Debug.Log ("Current Selected: " + this.selected + ", Next Selected: " + uiObject);
 		if (this.selected != null) {
 			this.selected.GetGameObject().GetComponent<CanvasRenderer> ().SetColor (this.GetSelectedColor (false));
 		}
@@ -219,19 +223,23 @@ class Players {
 		}
 	}
 
-	public bool IsPlayerBuilding() {
-		return this.playerBuilding;
+	public bool IsBuilding() {
+		return this.building;
 	}
 
-	public int GetPlayerId() {
+	public bool IsPlacing() {
+		return this.placing;
+	}
+
+	internal int GetPlayerId() {
 		return this.playerId;
 	}
 
-	public UIObject GetSelected() {
+	internal UIObject GetSelected() {
 		return this.selected;
 	}
 
-	public Color32 GetSelectedColor(bool selected) {
+	internal Color32 GetSelectedColor(bool selected) {
 		if (!selected) {
 			return Color.white;
 		}
@@ -298,7 +306,7 @@ class UIObject {
 	}
 
 	public UIObject GetUp() {
-		return this.down;
+		return this.up;
 	}
 
 	public UIObject GetDown() {

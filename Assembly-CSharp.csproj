@@ -49,9 +49,10 @@
      <Compile Include="Assets\Scripts\BuildPanel.cs" />
      <Compile Include="Assets\Scripts\BuildingBlock.cs" />
      <Compile Include="Assets\Scripts\CameraController.cs" />
-     <Compile Include="Assets\Scripts\Controller.cs" />
      <Compile Include="Assets\Scripts\InputConsts.cs" />
      <Compile Include="Assets\Scripts\Player.cs" />
+     <Compile Include="Assets\Scripts\PlayerInputs.cs" />
+     <Compile Include="Assets\Scripts\Tags.cs" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>
