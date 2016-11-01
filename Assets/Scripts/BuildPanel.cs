@@ -1,13 +1,14 @@
 ﻿using UnityEngine;
+using UnityEngine.Networking;
 using System.Collections.Generic;
 
-public class BuildPanel : MonoBehaviour {
+public class BuildPanel : NetworkBehaviour {
 	public GameObject canvas;
 
 	private Dictionary<int, PlayerBuild> players;
 	private List<UIObject> uiObjects;
 
-	void Start () {
+	void Awake () {
 		players = new Dictionary<int, PlayerBuild> ();
 		uiObjects = new List<UIObject> ();
 		canvas.SetActive (false);
@@ -62,7 +63,7 @@ public class BuildPanel : MonoBehaviour {
 			}
 			if (GetPlayerBuild (playerId).IsBuilding ()) {
 				if (input.GetSelect ()) {
-					SelectBlock (playerId);
+					CmdSelectBlock (playerId);
 					input.SetPlaceCD (Time.time + 2.0f * input.GetPlaceCDBase ());
 				}
 				if (input.GetExit ()) { 
@@ -84,7 +85,7 @@ public class BuildPanel : MonoBehaviour {
 
 	public PlayerBuild GetPlayerBuild(int playerId) {
 		if (!players.ContainsKey (playerId)) {
-			players.Add (playerId, new PlayerBuild (playerId));
+			players.Add (playerId, new PlayerBuild (gameObject, playerId));
 		}
 
 		return players[playerId];
@@ -172,7 +173,8 @@ public class BuildPanel : MonoBehaviour {
 		}
 	}
 
-	private void SelectBlock(int playerId) {
+	[Command]
+	private void CmdSelectBlock(int playerId) {
 		PlayerBuild player = GetPlayerBuild (playerId);
 		if (player.GetSelected () != null) {
 			player.SetPlacing (true);
@@ -181,6 +183,7 @@ public class BuildPanel : MonoBehaviour {
 			buildingBlock.GetComponent<SpriteRenderer> ().color = player.GetSelectedColor (true);
 			buildingBlock.AddComponent<BuildingBlock> ();
 			buildingBlock.GetComponent<BuildingBlock> ().SetPlayer (playerId);
+			NetworkServer.Spawn (buildingBlock);
 			InputExit (playerId);
 		}
 	}
@@ -198,11 +201,17 @@ public class PlayerBuild {
 	private bool building;
 	private bool placing;
 	private UIObject selected;
+	private GameObject player;
 
-	public PlayerBuild(int playerId) {
+	public PlayerBuild(GameObject player, int playerId) {
+		this.player = player;
 		this.playerId = playerId;
 		this.building = false;
 		this.placing = false;
+	}
+
+	internal GameObject GetGameObject() {
+		return this.player;
 	}
 
 	internal void SetBuilding(bool building) {

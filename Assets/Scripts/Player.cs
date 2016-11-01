@@ -1,24 +1,50 @@
 ﻿using UnityEngine;
+using UnityEngine.Networking;
 using System.Collections;
 
-public class Player : MonoBehaviour {
+public class Player : NetworkBehaviour {
 	public int playerId = 1;
 	public float walkStrength = 5.0f;
 	public float jumpStrength = 10.0f;
 	public float jumpCDBase = 0.2f;
 	public bool canJump = true;
-	private float jumpCD;
 
-	void Start() {
-		Object.FindObjectOfType<BuildPanel> ().AddPlayer(playerId);
-		Object.FindObjectOfType<PlayerInputs> ().AddPlayer (playerId);
+	public GameObject buildPanelPrefab;
+	public GameObject playerInputsPrefab;
+	private float jumpCD;
+	private BuildPanel buildPanel;
+	private PlayerInputs playerInputs;
+
+	private bool connected = false;
+
+	void OnConnectedToServer() {
+		StartUpClient ();
+	}
+
+	void OnServerInitialized() {
+		StartUpClient ();
+	}
+		
+	void StartUpClient() {
+		GameObject playerInputsObj = Instantiate<GameObject> (playerInputsPrefab);
+		playerInputs = playerInputsObj.GetComponent<PlayerInputs> ();
+		playerInputs.AddPlayer (playerId);
+		GameObject buildPanelObj = Instantiate<GameObject> (buildPanelPrefab);
+		buildPanelObj.transform.parent = transform;
+		buildPanel = buildPanelObj.GetComponent<BuildPanel> ();
+		buildPanel.AddPlayer (playerId);
+		NetworkServer.Spawn(buildPanelObj);
 		Object.FindObjectOfType<CameraController> ().AddPlayer (gameObject);
+		connected = true;
 	}
 
 	void Update () {
-		PlayerBuild build = Object.FindObjectOfType<BuildPanel> ().GetPlayerBuild (playerId);
+		if(!isLocalPlayer || !connected) {
+			return;
+		}
+		PlayerBuild build = buildPanel.GetPlayerBuild (playerId);
 		if (!build.IsBuilding () && !build.IsPlacing()) {
-			PlayerInput input = Object.FindObjectOfType<PlayerInputs> ().GetPlayerInput (playerId);
+			PlayerInput input = playerInputs.GetPlayerInput (playerId);
 			Option<float> xAxis = input.GetXAxis ();
 			if (xAxis.IsSome ()) {
 				this.GetComponent<Rigidbody2D> ().AddForce (Vector2.right * xAxis.GetValue() * walkStrength);

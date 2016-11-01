@@ -3,18 +3,20 @@ using UnityEngine;
 
 public class PlayerInputs: MonoBehaviour
 {
-	private Dictionary<int, PlayerInput> inputs;
-
-	void Start() {
-		inputs = new Dictionary<int, PlayerInput> ();
-	}
+	private Dictionary<int, PlayerInput> inputs = new Dictionary<int, PlayerInput> ();
 
 	public void AddPlayer(int playerId) {
-		inputs.Add (playerId, new PlayerInput (playerId));
+		if (!inputs.ContainsKey (playerId)) {
+			inputs.Add (playerId, new PlayerInput (playerId));
+		}
 	}
 
 	public PlayerInput GetPlayerInput(int playerId) {
-		return inputs [playerId];
+		if (inputs.ContainsKey(playerId)) {
+			return inputs [playerId];
+		} else {
+			return null;
+		}
 	}
 }
 

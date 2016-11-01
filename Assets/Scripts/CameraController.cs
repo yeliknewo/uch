@@ -9,6 +9,9 @@ public class CameraController : MonoBehaviour {
 	}
 		
 	void Update () {
+		while (players.Contains (null)) {
+			players.Remove (null);
+		}
 		if(players.Count > 0){
 			Vector3 temp = transform.position;
 			float maxDistance = 0.0f;
