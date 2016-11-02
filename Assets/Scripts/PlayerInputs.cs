@@ -199,81 +199,81 @@ public class PlayerInput {
 	}
 
 	public bool GetJump() {
-		if (Time.time >= GetJumpCD ()) {
+		if (Time.time >= GetJumpCD () && GetJumpForced ()) {
 			SetJumpCD (Time.time + GetJumpCDBase ());
-			return GetJumpForced ();
+			return true;
 		}
 		return false;
 	}
 
 	public bool GetUp() {
-		if (Time.time >= GetUpCD ()) {
+		if (Time.time >= GetUpCD () && GetUpForced ()) {
 			SetUpCD (Time.time + GetUpCDBase ());
-			return GetUpForced ();
+			return true;
 		}
 		return false;
 	}
 
 	public bool GetDown() {
-		if (Time.time >= GetDownCD ()) {
+		if (Time.time >= GetDownCD () && GetDownForced ()) {
 			SetDownCD (Time.time + GetDownCDBase ());
-			return GetDownForced ();
+			return true;
 		}
 		return false;
 	}
 
 	public bool GetLeft() {
-		if (Time.time >= GetLeftCD ()) {
+		if (Time.time >= GetLeftCD () && GetLeftForced ()) {
 			SetLeftCD (Time.time + GetLeftCDBase ());
-			return GetLeftForced ();
+			return true;
 		}
 		return false;
 	}
 
 	public bool GetRight() {
-		if (Time.time >= GetRightCD ()) {
+		if (Time.time >= GetRightCD () && GetRightForced ()) {
 			SetRightCD (Time.time + GetRightCDBase ());
-			return GetRightForced ();
+			return true;
 		}
 		return false;
 	}
 
 	public bool GetSelect() {
-		if (Time.time >= GetSelectCD ()) {
+		if (Time.time >= GetSelectCD () && GetSelectForced ()) {
 			SetSelectCD (Time.time + GetSelectCDBase ());
-			return GetSelectForced ();
+			return true;
 		}
 		return false;
 	}
 
 	public bool GetExit() {
-		if (Time.time >= GetExitCD ()) {
+		if (Time.time >= GetExitCD () && GetExitForced ()) {
 			SetExitCD (Time.time + GetExitCDBase ());
-			return GetExitForced ();
+			return true;
 		}
 		return false;
 	}
 
 	public bool GetPlace() {
-		if (Time.time >= GetPlaceCD ()) {
+		if (Time.time >= GetPlaceCD () && GetPlaceForced()) {
 			SetPlaceCD (Time.time + GetPlaceCDBase ());
-			return GetPlaceForced ();
+			return true;
 		}
 		return false;
 	}
 
 	public bool GetOpenBuildPanel() {
-		if (Time.time >= GetOpenBuildPanelCD ()) {
+		if (Time.time >= GetOpenBuildPanelCD () && GetOpenBuildPanelForced ()) {
 			SetOpenBuildPanelCD (Time.time + GetOpenBuildPanelCDBase ());
-			return GetOpenBuildPanelForced ();
+			return true;
 		}
 		return false;
 	}
 
 	public Option<float> GetXAxis() {
-		if (Time.time >= GetXAxisCD ()) {
+		if (Time.time >= GetXAxisCD()) {
 			SetXAxisCD (Time.time + GetXAxisCDBase ());
-			return new Option<float>(GetXAxisForced ());
+			return new Option<float>(GetXAxisForced());
 		}
 		return new Option<float>();
 	}

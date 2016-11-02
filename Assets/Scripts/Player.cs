@@ -9,37 +9,24 @@ public class Player : NetworkBehaviour {
 	public float jumpCDBase = 0.2f;
 	public bool canJump = true;
 
-	public GameObject buildPanelPrefab;
-	public GameObject playerInputsPrefab;
+	private GameObject buildPanelPrefab;
+	private GameObject playerInputsPrefab;
 	private float jumpCD;
 	private BuildPanel buildPanel;
 	private PlayerInputs playerInputs;
 
-	private bool connected = false;
-
-	void OnConnectedToServer() {
-		StartUpClient ();
-	}
-
-	void OnServerInitialized() {
-		StartUpClient ();
-	}
-		
-	void StartUpClient() {
-		GameObject playerInputsObj = Instantiate<GameObject> (playerInputsPrefab);
-		playerInputs = playerInputsObj.GetComponent<PlayerInputs> ();
-		playerInputs.AddPlayer (playerId);
-		GameObject buildPanelObj = Instantiate<GameObject> (buildPanelPrefab);
-		buildPanelObj.transform.parent = transform;
-		buildPanel = buildPanelObj.GetComponent<BuildPanel> ();
-		buildPanel.AddPlayer (playerId);
-		NetworkServer.Spawn(buildPanelObj);
-		Object.FindObjectOfType<CameraController> ().AddPlayer (gameObject);
-		connected = true;
+	void Start() {
+		if (isLocalPlayer) {
+			playerInputs = Object.FindObjectOfType<PlayerInputs> ();
+			playerInputs.AddPlayer (playerId);
+			buildPanel = Object.FindObjectOfType<BuildPanel> ();
+			buildPanel.AddPlayer (playerId, gameObject);
+			Object.FindObjectOfType<CameraController> ().AddPlayer (gameObject);
+		}
 	}
 
 	void Update () {
-		if(!isLocalPlayer || !connected) {
+		if(!isLocalPlayer) {
 			return;
 		}
 		PlayerBuild build = buildPanel.GetPlayerBuild (playerId);

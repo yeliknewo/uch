@@ -1,15 +1,13 @@
 ﻿using UnityEngine;
-using UnityEngine.Networking;
 using System.Collections.Generic;
 
-public class BuildPanel : NetworkBehaviour {
+public class BuildPanel : MonoBehaviour {
 	public GameObject canvas;
 
-	private Dictionary<int, PlayerBuild> players;
+	private Dictionary<int, PlayerBuild> players = new Dictionary<int, PlayerBuild> ();
 	private List<UIObject> uiObjects;
 
-	void Awake () {
-		players = new Dictionary<int, PlayerBuild> ();
+	void Start () {
 		uiObjects = new List<UIObject> ();
 		canvas.SetActive (false);
 		foreach (BuildItem item in canvas.GetComponentsInChildren<BuildItem> ()) {
@@ -49,26 +47,27 @@ public class BuildPanel : NetworkBehaviour {
 		foreach (PlayerBuild player in players.Values) {
 			int playerId = player.GetPlayerId ();
 			PlayerInput input = inputs.GetPlayerInput (playerId);
-			if (input.GetUp()) {
-				MoveUp(playerId);
-			}
-			if (input.GetDown ()) {
-				MoveDown (playerId);
-			}
-			if (input.GetLeft ()) {
-				MoveLeft (playerId);
-			}
-			if (input.GetRight ()) {
-				MoveRight (playerId);
-			}
+
 			if (GetPlayerBuild (playerId).IsBuilding ()) {
 				if (input.GetSelect ()) {
-					CmdSelectBlock (playerId);
+					SelectBlock (playerId);
 					input.SetPlaceCD (Time.time + 2.0f * input.GetPlaceCDBase ());
 				}
 				if (input.GetExit ()) { 
 					InputExit (playerId);
 					input.SetOpenBuildPanelCD (Time.time + input.GetOpenBuildPanelCDBase ());
+				}
+				if (input.GetUp()) {
+					MoveUp(playerId);
+				}
+				if (input.GetDown ()) {
+					MoveDown (playerId);
+				}
+				if (input.GetLeft ()) {
+					MoveLeft (playerId);
+				}
+				if (input.GetRight ()) {
+					MoveRight (playerId);
 				}
 			} else if(!GetPlayerBuild(playerId).IsPlacing()) {
 				if (input.GetOpenBuildPanel ()) {
@@ -79,16 +78,18 @@ public class BuildPanel : NetworkBehaviour {
 		}
 	}
 
-	public void AddPlayer(int playerId) {
-		GetPlayerBuild (playerId);
-	}
-
-	public PlayerBuild GetPlayerBuild(int playerId) {
+	public void AddPlayer(int playerId, GameObject gameObject) {
 		if (!players.ContainsKey (playerId)) {
 			players.Add (playerId, new PlayerBuild (gameObject, playerId));
 		}
+	}
 
-		return players[playerId];
+	public PlayerBuild GetPlayerBuild(int playerId) {
+		if (players.ContainsKey (playerId)) {
+			return players [playerId];
+		} else {
+			return null;
+		}
 	}
 
 	private void ExitPanel() {
@@ -172,18 +173,17 @@ public class BuildPanel : NetworkBehaviour {
 			}
 		}
 	}
-
-	[Command]
-	private void CmdSelectBlock(int playerId) {
+		
+	private void SelectBlock(int playerId) {
 		PlayerBuild player = GetPlayerBuild (playerId);
 		if (player.GetSelected () != null) {
 			player.SetPlacing (true);
 			GameObject buildingBlock = Instantiate<GameObject> (player.GetSelected().GetBlock());
 			buildingBlock.transform.position = Vector3.zero;
 			buildingBlock.GetComponent<SpriteRenderer> ().color = player.GetSelectedColor (true);
-			buildingBlock.AddComponent<BuildingBlock> ();
 			buildingBlock.GetComponent<BuildingBlock> ().SetPlayer (playerId);
-			NetworkServer.Spawn (buildingBlock);
+			Debug.Log (buildingBlock);
+			player.GetGameObject ().GetComponent<Spawner> ().CmdSpawn (buildingBlock);
 			InputExit (playerId);
 		}
 	}
@@ -203,7 +203,7 @@ public class PlayerBuild {
 	private UIObject selected;
 	private GameObject player;
 
-	public PlayerBuild(GameObject player, int playerId) {
+	internal PlayerBuild(GameObject player, int playerId) {
 		this.player = player;
 		this.playerId = playerId;
 		this.building = false;
@@ -281,7 +281,7 @@ class UIObject {
 	private UIObject up;
 	private UIObject down;
 
-	public UIObject(int id, GameObject gameObject, GameObject block, UIObject left = null, UIObject right = null, UIObject up = null, UIObject down = null) {
+	internal UIObject(int id, GameObject gameObject, GameObject block, UIObject left = null, UIObject right = null, UIObject up = null, UIObject down = null) {
 		this.id = id;
 		this.gameObject = gameObject;
 		this.block = block;
@@ -291,47 +291,47 @@ class UIObject {
 		this.down = down;
 	}
 
-	public void SetLeft(UIObject left) {
+	internal void SetLeft(UIObject left) {
 		this.left = left;
 	}
 
-	public void SetRight(UIObject right) {
+	internal void SetRight(UIObject right) {
 		this.right = right;
 	}
 
-	public void SetUp(UIObject up) {
+	internal void SetUp(UIObject up) {
 		this.up = up;
 	}
 
-	public void SetDown(UIObject down) {
+	internal void SetDown(UIObject down) {
 		this.down = down;
 	}
 
-	public UIObject GetLeft() {
+	internal UIObject GetLeft() {
 		return this.left;
 	}
 
-	public UIObject GetRight() {
+	internal UIObject GetRight() {
 		return this.right;
 	}
 
-	public UIObject GetUp() {
+	internal UIObject GetUp() {
 		return this.up;
 	}
 
-	public UIObject GetDown() {
+	internal UIObject GetDown() {
 		return this.down;
 	}
 
-	public GameObject GetBlock() {
+	internal GameObject GetBlock() {
 		return this.block;
 	}
 
-	public GameObject GetGameObject() {
+	internal GameObject GetGameObject() {
 		return this.gameObject;
 	}
 
-	public int GetId() {
+	internal int GetId() {
 		return this.id;
 	}
 }
