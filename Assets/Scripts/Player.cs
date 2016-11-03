@@ -9,24 +9,39 @@ public class Player : NetworkBehaviour {
 	public float jumpCDBase = 0.2f;
 	public bool canJump = true;
 
-	private GameObject buildPanelPrefab;
-	private GameObject playerInputsPrefab;
+	public GameObject buildPanelPrefab;
+	public GameObject playerInputsPrefab;
 	private float jumpCD;
 	private BuildPanel buildPanel;
 	private PlayerInputs playerInputs;
 
-	void Start() {
-		if (isLocalPlayer) {
-			playerInputs = Object.FindObjectOfType<PlayerInputs> ();
-			playerInputs.AddPlayer (playerId);
-			buildPanel = Object.FindObjectOfType<BuildPanel> ();
-			buildPanel.AddPlayer (playerId, gameObject);
-			Object.FindObjectOfType<CameraController> ().AddPlayer (gameObject);
-		}
+	private bool setup = false;
+
+	public override void OnStartAuthority() {
+		CmdSetup ();
+	}
+
+	[Command]
+	void CmdSetup() {
+		GameObject playerInputsObj = Instantiate<GameObject> (playerInputsPrefab);
+		playerInputs = GetComponent<PlayerInputs> ();
+		playerInputs.AddPlayer (playerId);
+		NetworkServer.Spawn (playerInputsObj);
+		GameObject buildPanelObj = Instantiate<GameObject> (buildPanelPrefab);
+		buildPanel = buildPanelObj.GetComponent<BuildPanel> ();
+		buildPanel.AddPlayer (playerId, gameObject);
+		NetworkServer.SpawnWithClientAuthority (buildPanelObj, gameObject);
+		Object.FindObjectOfType<CameraController> ().AddPlayer (gameObject);
+		setup = true;
 	}
 
 	void Update () {
-		if(!isLocalPlayer) {
+		if (!setup) {
+			if (hasAuthority) {
+				CmdSetup ();
+			}
+		}
+		if(!isLocalPlayer || !hasAuthority) {
 			return;
 		}
 		PlayerBuild build = buildPanel.GetPlayerBuild (playerId);

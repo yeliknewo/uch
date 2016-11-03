@@ -1,14 +1,16 @@
 ﻿using UnityEngine;
+using UnityEngine.Networking;
 using System.Collections;
 
 public class BuildingBlock : MonoBehaviour {
 	private int playerId;
 	private float speed = 10.0f;
 
-	public bool initial;
-
-	public void SetPlayer(int playerId) {
+	public void SetPlayer(int playerId, Color color) {
 		this.playerId = playerId;
+		GetComponent<SpriteRenderer> ().color = color;
+		GetComponent<BoxCollider2D> ().enabled = false;
+		Object.FindObjectOfType<BuildPanel> ().GetPlayerBuild (playerId).SetPlacing (true);
 	}
 
 	void Exit() {
@@ -17,17 +19,17 @@ public class BuildingBlock : MonoBehaviour {
 		Destroy (this);
 	}
 
-	void Start() {
-		if (!initial) {
-			GetComponent<BoxCollider2D> ().enabled = false;
-		}
-	}
-
 	void Update() {
-		if (initial) {
+		PlayerInputs inputs = Object.FindObjectOfType<PlayerInputs> ();
+		if (inputs == null) {
+			Exit ();
 			return;
 		}
-		PlayerInput input = Object.FindObjectOfType<PlayerInputs> ().GetPlayerInput (playerId);
+		PlayerInput input = inputs.GetPlayerInput (playerId);
+		if (input == null) {
+			Exit ();
+			return;
+		}
 		Option<Vector2> vector = input.GetVector ();
 		if (vector.IsSome ()) {
 			transform.position = transform.position + (Vector3)vector.GetValue() * Time.deltaTime * speed;

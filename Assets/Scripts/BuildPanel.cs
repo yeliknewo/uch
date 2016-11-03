@@ -1,7 +1,8 @@
 ﻿using UnityEngine;
+using UnityEngine.Networking;
 using System.Collections.Generic;
 
-public class BuildPanel : MonoBehaviour {
+public class BuildPanel : NetworkBehaviour {
 	public GameObject canvas;
 
 	private Dictionary<int, PlayerBuild> players = new Dictionary<int, PlayerBuild> ();
@@ -50,7 +51,7 @@ public class BuildPanel : MonoBehaviour {
 
 			if (GetPlayerBuild (playerId).IsBuilding ()) {
 				if (input.GetSelect ()) {
-					SelectBlock (playerId);
+					CmdSelectBlock (playerId);
 					input.SetPlaceCD (Time.time + 2.0f * input.GetPlaceCDBase ());
 				}
 				if (input.GetExit ()) { 
@@ -173,17 +174,16 @@ public class BuildPanel : MonoBehaviour {
 			}
 		}
 	}
-		
-	private void SelectBlock(int playerId) {
+
+	[Command]
+	private void CmdSelectBlock(int playerId) {
 		PlayerBuild player = GetPlayerBuild (playerId);
 		if (player.GetSelected () != null) {
-			player.SetPlacing (true);
 			GameObject buildingBlock = Instantiate<GameObject> (player.GetSelected().GetBlock());
-			buildingBlock.transform.position = Vector3.zero;
-			buildingBlock.GetComponent<SpriteRenderer> ().color = player.GetSelectedColor (true);
-			buildingBlock.GetComponent<BuildingBlock> ().SetPlayer (playerId);
+			buildingBlock.transform.position = player.GetGameObject().transform.position;
+			buildingBlock.GetComponent<BuildingBlock> ().SetPlayer (playerId,  player.GetSelectedColor (true));
 			Debug.Log (buildingBlock);
-			player.GetGameObject ().GetComponent<Spawner> ().CmdSpawn (buildingBlock);
+			NetworkServer.Spawn (buildingBlock);
 			InputExit (playerId);
 		}
 	}
